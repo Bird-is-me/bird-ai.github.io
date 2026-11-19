@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111111">
+<link rel="icon" type="image/png" href="https://cdn.ln-cdn.com/c/web7AbJZ012I9NdDp3C/images/bird.png">
+<title>Bird AI</title>
+<style>
+*{box-sizing:border-box}
+:root{color-scheme:dark}
+body{margin:0;background:#111;color:#f5f5f5;font-family:Arial,sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+#app{height:100dvh;display:flex;max-width:1200px;margin:auto;border-left:1px solid #252525;border-right:1px solid #252525}
+#sidebar{width:245px;flex-shrink:0;background:#171717;border-right:1px solid #303030;display:flex;flex-direction:column;padding:14px;gap:12px}
+.brand{font-size:21px;font-weight:bold;padding:8px 4px;display:flex;align-items:center;gap:9px}
+.bird-icon{width:28px;height:28px;object-fit:contain;border-radius:50%}
+.window-controls{display:flex;gap:7px;padding:5px 4px 9px}
+.window-dot{width:12px;height:12px;border-radius:50%;display:block}
+.window-dot.red{background:#ff5f57}.window-dot.yellow{background:#febc2e}.window-dot.green{background:#28c840}
+.action{background:#252525;color:#fff;border:1px solid #414141;border-radius:9px;padding:11px;text-align:left}
+.action:hover,.chat-item:hover{background:#303030}
+#chatList{overflow:auto;flex:1}
+.chat-item{width:100%;display:flex;gap:8px;align-items:center;text-align:left;background:transparent;color:#ddd;border:0;border-radius:8px;padding:10px;margin:2px 0}
+.chat-item.active{background:#303030;color:#fff}
+.chat-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.delete-chat{border:0;background:transparent;color:#999;padding:4px}
+#main{min-width:0;flex:1;display:flex;flex-direction:column}
+header{height:60px;flex-shrink:0;padding:0 18px;border-bottom:1px solid #303030;display:flex;align-items:center;justify-content:space-between}
+#menu{display:none}
+.header-title{font-weight:bold}
+#settings{background:#252525;border:1px solid #444;color:white;border-radius:9px;padding:8px 12px}
+#config{display:none;padding:14px;background:#191919;border-bottom:1px solid #333;gap:9px}
+#config.open{display:grid}
+#config input,#config select{width:100%;padding:11px;border:1px solid #444;border-radius:8px;background:#222;color:#fff;outline:none}
+.config-row{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.small{font-size:12px;color:#999;line-height:1.5}
+#save{padding:10px 14px;border:0;border-radius:8px;background:#eee;color:#111;font-weight:bold}
+#status{padding:8px 18px;color:#999;font-size:12px;border-bottom:1px solid #252525}
+#chat{flex:1;overflow-y:auto;padding:20px;scroll-behavior:smooth}
+.welcome{max-width:620px;margin:12vh auto;text-align:center;color:#aaa}
+.welcome h1{color:#fff;font-size:30px;margin-bottom:8px}
+.msg{max-width:850px;margin:14px auto;padding:14px 16px;border-radius:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.user{background:#303030;margin-right:max(0px,calc((100% - 850px)/2))}
+.ai{background:#202020;border:1px solid #303030;margin-left:max(0px,calc((100% - 850px)/2))}
+.msg-tools{display:flex;gap:8px;margin-top:9px}
+.msg-tools button{background:#303030;color:#ccc;border:1px solid #444;border-radius:6px;padding:5px 8px;font-size:12px}
+.loading{color:#aaa}
+.dot{display:inline-block;width:6px;height:6px;margin-left:4px;border-radius:50%;background:#aaa;animation:pulse 1s infinite alternate}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{to{opacity:.2;transform:translateY(-3px)}}
+#bar{padding:14px 18px;border-top:1px solid #303030;display:flex;gap:9px;max-width:900px;width:100%;margin:0 auto}
+#input{flex:1;min-width:0;resize:none;max-height:150px;padding:13px;border:1px solid #444;border-radius:12px;background:#242424;color:#fff;outline:none}
+#send{border:0;border-radius:11px;padding:0 18px;background:#eee;color:#111;font-weight:bold}
+#send:disabled{opacity:.5}
+#footerNote{text-align:center;color:#777;font-size:11px;padding:0 12px 10px}
+#loginGate{position:fixed;z-index:20;inset:0;background:#111e;backdrop-filter:blur(8px);display:grid;place-items:center;padding:20px}
+#loginGate[hidden]{display:none}
+.login-card{width:min(100%,380px);padding:25px;background:#1b1b1b;border:1px solid #383838;border-radius:16px;box-shadow:0 20px 70px #0009}
+.login-card h1{margin:0 0 8px;font-size:22px}.login-card p{color:#aaa;font-size:14px;line-height:1.5}
+.login-card input{width:100%;margin:10px 0;padding:12px;border:1px solid #444;border-radius:8px;background:#222;color:#fff}
+.login-card button{width:100%;padding:11px;border:0;border-radius:8px;background:#eee;color:#111;font-weight:bold}
+#loginError{min-height:18px;color:#ff8a80;font-size:13px}
+#loginError.success{color:#9be7a8}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0 8px}
+.auth-tabs button{background:#262626;color:#bbb;border:1px solid #444}
+.auth-tabs button.active{background:#eee;color:#111;border-color:#eee}
+#logout{background:#252525;border:1px solid #444;color:white;border-radius:9px;padding:8px 12px;margin-left:8px}
+@media(max-width:650px){
+ #sidebar{position:fixed;z-index:5;inset:0 auto 0 0;width:260px;transform:translateX(-100%);transition:transform .2s;box-shadow:none}
+ #sidebar.open{transform:translateX(0);box-shadow:10px 0 30px #0009}
+ #menu{display:inline-block;background:#252525;color:white;border:1px solid #444;border-radius:8px;padding:7px 10px;margin-right:9px}
+ header{padding:0 12px}
+ #chat{padding:12px}
+ .msg{max-width:100%;margin:10px 0}
+ #bar{padding:10px}
+ .config-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="loginGate"><form class="login-card" id="loginForm">
+ <h1>🐦 Bird AI</h1><p id="authHint">Sign in to continue to your private chats.</p>
+ <div class="auth-tabs"><button type="button" id="loginMode" class="active">Sign in</button><button type="button" id="signupMode">Create account</button></div>
+ <input id="authEmail" type="email" placeholder="Email address" autocomplete="email" required>
+ <input id="loginPassword" type="password" placeholder="Password" autocomplete="current-password" minlength="8" required>
+ <button id="authSubmit" type="submit">Sign in</button><div id="loginError" aria-live="polite"></div>
+</form></div>
+<div id="app">
+<aside id="sidebar">
+ <div class="window-controls" aria-label="Window controls"><span class="window-dot red"></span><span class="window-dot yellow"></span><span class="window-dot green"></span></div>
+ <div class="brand"><img class="bird-icon" src="https://cdn.ln-cdn.com/c/web7AbJZ012I9NdDp3C/images/bird.png" alt="">Bird AI</div>
+ <button class="action" id="newChat">＋ New chat</button>
+ <div class="small">RECENT CHATS</div>
+ <div id="chatList"></div>
+ <button class="action" id="exportChat">⇩ Export conversation</button>
+ <button class="action" id="clearAll">Clear all chats</button>
+ <div class="small">Bird AI · Local project</div>
+</aside>
+<main id="main">
+ <header>
+  <div style="display:flex;align-items:center;min-width:0">
+   <button id="menu">☰</button>
+   <div class="header-title">Bird AI</div>
+  </div>
+  <div><button id="logout" hidden>Sign out</button><button id="settings">⚙ Settings</button></div>
+ </header>
+ <section id="config" aria-label="Settings">
+  <select id="model" aria-label="Select model">
+   <option value="openai/gpt-4o-mini">OpenAI: GPT-4o mini</option>
+   <option value="anthropic/claude-3.5-sonnet">Anthropic: Claude 3.5 Sonnet</option>
+   <option value="google/gemini-2.5-flash">Google: Gemini 2.5 Flash</option>
+   <option value="deepseek/deepseek-chat-v3-0324">DeepSeek: V3</option>
+   <option value="custom">Custom model ID…</option>
+  </select>
+  <input id="customModel" type="text" placeholder="Custom OpenRouter model ID" style="display:none">
+  <input id="systemPrompt" type="text" placeholder="System prompt">
+  <div class="small" id="modelStatus" aria-live="polite">Choose a model and set the system prompt.</div>
+  <button id="save">Save settings</button>
+ </section>
+ <div id="status">Ready</div>
+ <section id="chat" aria-live="polite"></section>
+ <form id="bar">
+  <textarea id="input" rows="1" placeholder="Ask Bird AI..." autocomplete="off"></textarea>
+  <button id="send" type="submit">Send</button>
+ </form>
+ <div id="footerNote">Bird AI can make mistakes. Check important information.</div>
+</main>
+</div>
+<script src="./client-config.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const modelInput=$("model"), systemInput=$("systemPrompt"), customModelInput=$("customModel");
+const config=$("config"), chat=$("chat"), input=$("input"), sendButton=$("send");
+const statusLine=$("status"), chatList=$("chatList");
+const STORAGE_KEY="bird_ai_project_v1";
+let userStorageKey=null, chats=[], activeId=null, busy=false, aborter=null, syncTimer=null, isLoggedIn=false, authMode="login";
+const apiConfig=window.BIRD_CONFIG||{api:{auth:"/api/auth",chat:"/api/chat",chats:"/api/chats",models:"https://openrouter.ai/api/v1/models?sort=most-popular"},defaultModel:"openai/gpt-4o-mini"};
+async function readApiJson(response){
+ const text=await response.text();
+ try{return JSON.parse(text)}catch{
+  if(/^\s*</.test(text))throw new Error("Backend API is unavailable on this host. Deploy this app to Vercel, which runs the /api routes.");
+  throw new Error("The backend returned an invalid JSON response.");
+ }
+}
+function selectedModel(){return modelInput.value==="custom"?customModelInput.value.trim():modelInput.value}
+async function loadModels(){
+ const status=$("modelStatus"),saved=selectedModel();
+ try{
+  const response=await fetch(apiConfig.api.models);
+  if(!response.ok)throw new Error("Model list unavailable");
+  const data=await response.json(),models=(data.data||[]).filter(m=>m.id&&m.architecture?.output_modalities?.includes("text")).slice(0,150);
+  if(!models.length)throw new Error("No models returned");
+  modelInput.replaceChildren();
+  models.forEach(m=>{const option=document.createElement("option");option.value=m.id;option.textContent=m.name||m.id;modelInput.append(option)});
+  if(saved&&!models.some(m=>m.id===saved)){const option=document.createElement("option");option.value=saved;option.textContent="Saved model: "+saved;modelInput.append(option)}
+  const custom=document.createElement("option");custom.value="custom";custom.textContent="Custom model ID…";modelInput.append(custom);
+  modelInput.value=saved||models[0].id;
+  if(!modelInput.value)modelInput.value=models[0].id;
+  customModelInput.style.display=modelInput.value==="custom"?"block":"none";
+  status.textContent="Showing popular OpenRouter models. Choose a custom ID if needed.";
+ }catch(error){status.textContent="Showing saved models. Live model list could not be loaded."}
+}
+function scheduleSupabaseSync(){clearTimeout(syncTimer);syncTimer=setTimeout(syncChats,500)}
+async function loadSupabaseChats(){
+ if(!isLoggedIn)return;
+ try{
+  const response=await fetch(apiConfig.api.chats,{credentials:"same-origin"});
+  if(!response.ok)throw new Error("Supabase returned "+response.status);
+  const remote=await response.json(),merged=new Map(chats.map(c=>[c.id,c]));
+  remote.forEach(c=>{const local=merged.get(c.id);if(!local||(c.updated||0)>(local.updated||0))merged.set(c.id,c)});
+  chats=[...merged.values()].sort((a,b)=>(b.updated||0)-(a.updated||0));
+  if(!chats.length)createChat();else{activeId=chats[0].id;persist();renderList();renderChat()}
+  statusLine.textContent="Ready · chats loaded";
+ }catch(error){console.warn("Chat load failed:",error);statusLine.textContent="Chat load failed · check backend settings"}
+}
+async function syncChats(){if(!isLoggedIn)return;try{const response=await fetch(apiConfig.api.chats,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({chats})});if(!response.ok)throw new Error("Backend returned "+response.status);statusLine.textContent="Ready · chats synced"}catch(error){console.warn("Chat sync failed:",error);statusLine.textContent="Chat sync failed · check backend settings"}}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+function load(){
+ chats=[];activeId=null;
+ modelInput.value=localStorage.getItem("bird_model")||apiConfig.defaultModel;
+ if(![...modelInput.options].some(o=>o.value===modelInput.value)){modelInput.value="custom";customModelInput.value=localStorage.getItem("bird_model")||""}
+ customModelInput.style.display=modelInput.value==="custom"?"block":"none";
+ systemInput.value=localStorage.getItem("bird_system")||"You are Bird AI. Be helpful, clear, accurate, and respond in the user's language.";
+ renderList();renderChat();
+}
+function persist(){if(userStorageKey)localStorage.setItem(userStorageKey,JSON.stringify(chats));scheduleSupabaseSync()}
+function loadUserChats(userId){
+ userStorageKey=STORAGE_KEY+"_"+userId;
+ try{chats=JSON.parse(localStorage.getItem(userStorageKey)||"[]");if(!Array.isArray(chats))chats=[]}catch{chats=[]}
+ if(chats.length)activeId=chats[0].id;else createChat();
+ renderList();renderChat();
+}
+async function enterApp(userId){
+ if(!userId)throw new Error("Sign-in succeeded but no user ID was returned.");
+ isLoggedIn=true;loadUserChats(userId);$("loginGate").hidden=true;$("logout").hidden=false;
+ await loadSupabaseChats();
+}
+function current(){return chats.find(c=>c.id===activeId)}
+function createChat(){
+ const c={id:uid(),title:"New chat",messages:[],updated:Date.now()};
+ chats.unshift(c);activeId=c.id;persist();renderList();renderChat();closeSidebar();
+}
+function renderList(){
+ chatList.replaceChildren();
+ chats.forEach(c=>{
+  const row=document.createElement("div");row.style.display="flex";row.style.alignItems="center";
+  const b=document.createElement("button");b.className="chat-item"+(c.id===activeId?" active":"");b.style.flex="1";
+  const name=document.createElement("span");name.className="chat-title";name.textContent="▤ "+c.title;
+  b.append(name);b.onclick=()=>{activeId=c.id;renderList();renderChat();closeSidebar()};
+  const del=document.createElement("button");del.className="delete-chat";del.textContent="×";del.title="Delete chat";
+  del.onclick=()=>deleteChat(c.id);
+  row.append(b,del);chatList.append(row);
+ });
+}
+async function deleteChat(id){
+ if(isLoggedIn)await fetch(apiConfig.api.chats+"?id="+encodeURIComponent(id),{method:"DELETE",credentials:"same-origin"}).catch(()=>{});
+ chats=chats.filter(c=>c.id!==id);
+ if(!chats.length){createChat();return}
+ if(activeId===id)activeId=chats[0].id;
+ persist();renderList();renderChat();
+}
+function renderChat(){
+ chat.replaceChildren();
+ const c=current();if(!c)return;
+ if(!c.messages.length){
+  const w=document.createElement("div");w.className="welcome";
+  const h=document.createElement("h1");const logo=document.createElement("img");logo.className="bird-icon";logo.src="https://cdn.ln-cdn.com/c/web7AbJZ012I9NdDp3C/images/bird.png";logo.alt="";h.append(logo,document.createTextNode(" Bird AI"));
+  const p=document.createElement("p");p.textContent="What would you like to work on today?";
+  w.append(h,p);chat.append(w);
+ }else c.messages.forEach(m=>addMessageElement(m));
+ chat.scrollTop=chat.scrollHeight;
+}
+function addMessageElement(message){
+ const wrap=document.createElement("div");wrap.className="msg "+(message.role==="user"?"user":"ai");
+ const body=document.createElement("div");body.textContent=message.text;wrap.append(body);
+ if(message.role==="model"){
+  const tools=document.createElement("div");tools.className="msg-tools";
+  const copy=document.createElement("button");copy.textContent="Copy";
+  copy.onclick=async()=>{try{await navigator.clipboard.writeText(message.text);copy.textContent="Copied"}catch{copy.textContent="Copy unavailable"}};
+  tools.append(copy);wrap.append(tools);
+ }
+ chat.append(wrap);return wrap;
+}
+function addMessage(text,role){
+ const c=current();const m={role,text};c.messages.push(m);
+ if(role==="user"&&c.title==="New chat")c.title=text.slice(0,36)+(text.length>36?"…":"");
+ c.updated=Date.now();persist();renderList();return addMessageElement(m);
+}
+function loading(){
+ const el=document.createElement("div");el.className="msg ai loading";el.textContent="Bird AI is thinking";
+ for(let i=0;i<3;i++){const d=document.createElement("span");d.className="dot";el.append(d)}
+ chat.append(el);chat.scrollTop=chat.scrollHeight;return el;
+}
+async function sendMessage(event){
+ event?.preventDefault();if(busy)return;
+ const text=input.value.trim();if(!text)return;
+ const model=selectedModel();
+ if(!isLoggedIn){$("loginGate").hidden=false;return}
+ if(!model){statusLine.textContent="Choose a model";return}
+ addMessage(text,"user");input.value="";resizeInput();
+ busy=true;sendButton.disabled=true;input.disabled=true;statusLine.textContent="Generating response…";
+ const wait=loading();aborter=new AbortController();
+ const c=current();
+ try{
+  const response=await fetch(apiConfig.api.chat,{method:"POST",signal:aborter.signal,credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({model,messages:[{role:"system",content:systemInput.value.trim()||"You are Bird AI. Be helpful and accurate."},...c.messages.map(m=>({role:m.role==="model"?"assistant":"user",content:m.text}))]})});
+  const data=await readApiJson(response);
+  if(!response.ok)throw new Error((typeof data?.error==="string"?data.error:data?.error?.message)||"API request failed ("+response.status+")");
+  const answer=data?.choices?.[0]?.message?.content?.trim()||"";
+  if(!answer)throw new Error("The model returned an empty response.");
+  wait.remove();addMessage(answer,"model");statusLine.textContent="Ready";
+ }catch(error){
+  wait.remove();
+  if(error.name==="AbortError"){statusLine.textContent="Request cancelled";return}
+  addMessage("API Error: "+error.message,"model");statusLine.textContent="API Error";
+ }finally{
+  busy=false;sendButton.disabled=false;input.disabled=false;input.focus();aborter=null;
+ }
+}
+function saveSettings(){
+ localStorage.setItem("bird_model",selectedModel());
+ localStorage.setItem("bird_system",systemInput.value.trim());
+ config.classList.remove("open");statusLine.textContent="Settings saved";
+}
+function exportChat(){
+ const c=current();if(!c)return;
+ const content=c.messages.map(m=>(m.role==="user"?"You":"Bird AI")+":\n"+m.text).join("\n\n");
+ const blob=new Blob([content],{type:"text/plain;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=(c.title||"bird-chat").replace(/[\\/:*?"<>|]/g,"_")+".txt";a.click();URL.revokeObjectURL(url);
+}
+function resizeInput(){input.style.height="auto";input.style.height=Math.min(input.scrollHeight,150)+"px"}
+function closeSidebar(){$("sidebar").classList.remove("open")}
+$("newChat").onclick=createChat;
+$("settings").onclick=()=>{config.classList.toggle("open");if(config.classList.contains("open"))loadModels()};
+$("save").onclick=saveSettings;
+modelInput.onchange=()=>{customModelInput.style.display=modelInput.value==="custom"?"block":"none"};
+function setAuthMode(mode){
+ authMode=mode;const signup=mode==="signup";
+ $("loginMode").classList.toggle("active",!signup);$("signupMode").classList.toggle("active",signup);
+ $("authHint").textContent=signup?"Create an account to keep your chats private and synced.":"Sign in to continue to your private chats.";
+ $("authSubmit").textContent=signup?"Create account":"Sign in";
+ $("loginPassword").autocomplete=signup?"new-password":"current-password";
+ $("loginError").textContent="";$("loginError").classList.remove("success");
+}
+$("loginMode").onclick=()=>setAuthMode("login");
+$("signupMode").onclick=()=>setAuthMode("signup");
+$("loginForm").addEventListener("submit",async event=>{
+ event.preventDefault();const button=$("authSubmit");button.disabled=true;$("loginError").textContent=authMode==="signup"?"Creating account…":"Signing in…";
+ try{
+  const response=await fetch(apiConfig.api.auth,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:authMode,email:$("authEmail").value,password:$("loginPassword").value})});
+  const data=await readApiJson(response);if(!response.ok)throw new Error(data.error||"Authentication failed.");
+  if(data.confirmationRequired){setAuthMode("login");$("loginError").classList.add("success");$("loginError").textContent=data.message;return}
+  $("loginPassword").value="";$("loginError").textContent="";await enterApp(data.userId);
+ }catch(error){$("loginError").classList.remove("success");$("loginError").textContent=error.message}
+ finally{button.disabled=false}
+});
+$("logout").onclick=async()=>{await fetch(apiConfig.api.auth,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})});isLoggedIn=false;userStorageKey=null;chats=[];activeId=null;renderList();renderChat();$("logout").hidden=true;$("loginGate").hidden=false;config.classList.remove("open")};
+$("exportChat").onclick=exportChat;
+$("clearAll").onclick=async()=>{if(!confirm("Delete all saved conversations?"))return;if(isLoggedIn)await fetch(apiConfig.api.chats+"?all=1",{method:"DELETE",credentials:"same-origin"}).catch(()=>{});chats=[];activeId=null;createChat()};
+$("bar").addEventListener("submit",sendMessage);
+input.addEventListener("input",resizeInput);
+input.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
+$("menu").onclick=()=>$("sidebar").classList.toggle("open");
+load();
+loadModels();
+fetch(apiConfig.api.auth,{credentials:"same-origin"}).then(readApiJson).then(data=>{if(data.authenticated)enterApp(data.userId)}).catch(error=>{$("loginError").textContent=error.message});
+</script>
+</body>
+</html>
